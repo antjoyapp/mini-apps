@@ -213,8 +213,10 @@ const $ = id => document.getElementById(id);
 const fmt = ms => { const s = Math.max(0, Math.ceil(ms/1000)); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); };
 
 /* Ton */
-// iPhone: Töne auch bei Stummschalter spielen (Safari ab iOS 17)
-try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch(e) {}
+// iPhone: "playback" spielt Töne auch bei Stummschalter (Safari ab iOS 17),
+// sperrt aber das Mikrofon; für die Sprachsteuerung braucht es "play-and-record"
+function session(type){ try { if (navigator.audioSession && navigator.audioSession.type !== type) navigator.audioSession.type = type; } catch(e) {} }
+session("playback");
 let ac;
 function audio(){
   try {
@@ -258,7 +260,7 @@ function say(t){
    nach dem Sperren oft wieder neu */
 let unlocked = false;
 function unlock(){
-  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch(e) {}
+  session(voiceOn ? "play-and-record" : "playback");
   audio();
   if (unlocked) return;
   try {
@@ -485,6 +487,7 @@ async function voiceStart(){
     return;
   }
   status("Mikrofon wird angefragt …");
+  session("play-and-record");
   try {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
       const st = await navigator.mediaDevices.getUserMedia({audio:true});
@@ -492,10 +495,14 @@ async function voiceStart(){
     }
   } catch(e){
     console.warn("getUserMedia", e);
-    status(e && e.name === "NotAllowedError"
-      ? "Kein Zugriff aufs Mikrofon. Prüfe die Chrome-Freigabe und in macOS: Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon → Google Chrome einschalten. Danach Chrome neu starten."
-      : `Mikrofon ließ sich nicht öffnen (${e && e.name || "unbekannt"}).`);
-    return;
+    if (e && e.name === "NotAllowedError"){
+      session("playback");
+      status(iOS
+        ? "Kein Zugriff aufs Mikrofon. iPhone: Einstellungen → Apps → Safari → Mikrofon → Fragen oder Erlauben. Dann die Seite neu laden."
+        : "Kein Zugriff aufs Mikrofon. Prüfe die Chrome-Freigabe und in macOS: Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon → Google Chrome einschalten. Danach Chrome neu starten.");
+      return;
+    }
+    // Andere Fehler: die Spracherkennung fragt das Mikrofon selbst an, also trotzdem versuchen
   }
   try {
     if (rec){ rec.onend = null; try { rec.abort(); } catch(e) {} }
@@ -508,18 +515,18 @@ async function voiceStart(){
       if (e.error === "no-speech" || e.error === "aborted") return;
       const msg = {
         "not-allowed":"Kein Zugriff aufs Mikrofon. Prüfe die Chrome-Freigabe und macOS: Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon → Google Chrome.",
-        "service-not-allowed":"Chrome blockiert die Spracherkennung. Prüfe, ob du in Chrome angemeldet bist und kein Inkognito-Fenster nutzt.",
+        "service-not-allowed": iOS ? "Spracherkennung ist aus. iPhone: Einstellungen → Allgemein → Tastatur → Diktierfunktion einschalten." : "Chrome blockiert die Spracherkennung. Prüfe, ob du in Chrome angemeldet bist und kein Inkognito-Fenster nutzt.",
         "network":"Spracherkennung erreicht den Google-Server nicht. Prüfe Internet, VPN oder Werbeblocker.",
         "audio-capture":"Kein Mikrofon gefunden.",
         "language-not-supported":"Deutsch wird von der Spracherkennung nicht unterstützt."
       }[e.error] || `Spracherkennung meldet einen Fehler: ${e.error}.`;
-      voiceOn = false; setChip("tVoice", false); status(msg);
+      voiceOn = false; setChip("tVoice", false); session("playback"); status(msg);
     };
     rec.onend = () => {
       const ran = listening; listening = false;
       if (!voiceOn) return;
       fails = ran ? 0 : fails + 1;
-      if (fails > 5){ voiceOn = false; setChip("tVoice", false); status("Spracherkennung bricht immer wieder ab. Lade die Seite neu und versuch es noch einmal."); return; }
+      if (fails > 5){ voiceOn = false; setChip("tVoice", false); session("playback"); status("Spracherkennung bricht immer wieder ab. Lade die Seite neu und versuch es noch einmal."); return; }
       setTimeout(() => { if (voiceOn){ try { rec.start(); } catch(e) {} } }, 300);
     };
     voiceOn = true;
@@ -527,9 +534,9 @@ async function voiceStart(){
     status("Spracherkennung startet …");
     rec.start();
     setTimeout(() => { if (voiceOn && !listening && rec){ status("Spracherkennung startet nicht. Prüfe Internet, VPN oder Werbeblocker und lade die Seite neu."); } }, 5000);
-  } catch(e){ console.warn("SpeechRecognition start", e); voiceOn = false; setChip("tVoice", false); status(`Sprachsteuerung ließ sich nicht starten (${e && e.name || "unbekannt"}).`); }
+  } catch(e){ console.warn("SpeechRecognition start", e); voiceOn = false; setChip("tVoice", false); session("playback"); status(`Sprachsteuerung ließ sich nicht starten (${e && e.name || "unbekannt"}).`); }
 }
-function voiceStop(){ voiceOn = false; setChip("tVoice", false); try { rec && rec.stop(); } catch(e) {} status(""); }
+function voiceStop(){ voiceOn = false; setChip("tVoice", false); try { rec && rec.stop(); } catch(e) {} session("playback"); status(""); }
 $("tVoice").onclick = () => voiceOn ? voiceStop() : voiceStart();
 
 renderLast();
