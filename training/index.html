@@ -247,23 +247,30 @@ function say(t){
   try {
     const u = new SpeechSynthesisUtterance(t);
     u.lang = "de-DE"; if (deVoice) u.voice = deVoice; u.rate = 1.03;
-    // Safari verschluckt speak() direkt nach cancel()
-    if (speechSynthesis.speaking || speechSynthesis.pending){ speechSynthesis.cancel(); setTimeout(() => speechSynthesis.speak(u), 80); }
-    else speechSynthesis.speak(u);
+    // Muss synchron bleiben: auf dem iPhone zählt nur speak() direkt im Tipp als Freigabe
+    speechSynthesis.cancel();
     if (speechSynthesis.paused) speechSynthesis.resume();
+    speechSynthesis.speak(u);
   } catch(e) {}
 }
 
-/* iPhone gibt Ton und Sprache erst nach einer Berührung frei, nach dem Sperren oft wieder neu */
-let speechUnlocked = false;
+/* iPhone gibt Ton und Sprache erst nach einem Tipp frei (touchend/click, nicht pointerdown),
+   nach dem Sperren oft wieder neu */
+let unlocked = false;
 function unlock(){
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch(e) {}
   audio();
-  if (!speechUnlocked && "speechSynthesis" in window){
-    try { const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); speechUnlocked = true; } catch(e) {}
-  }
+  if (unlocked) return;
+  try {
+    // Stiller Puffer schaltet Web Audio frei
+    const b = ac.createBuffer(1, 1, 22050), src = ac.createBufferSource();
+    src.buffer = b; src.connect(ac.destination); src.start(0);
+  } catch(e) {}
+  try { if ("speechSynthesis" in window && !speechSynthesis.speaking){ const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } } catch(e) {}
+  unlocked = true;
 }
-["pointerdown", "touchend", "click"].forEach(ev => document.addEventListener(ev, unlock, {capture: true, passive: true}));
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { speechUnlocked = false; if (ac && ac.state !== "running") { try { ac.resume(); } catch(e) {} } } });
+["touchend", "click"].forEach(ev => document.addEventListener(ev, unlock, {capture: true, passive: true}));
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") unlocked = false; });
 
 /* Bildschirm wach halten */
 let wl = null;
@@ -452,8 +459,8 @@ $("back").onclick = back;
 
 function setChip(id, on){ $(id).setAttribute("aria-pressed", on ? "true" : "false"); }
 setChip("tSpeak", S.speak); setChip("tSound", S.sound);
-$("tSpeak").onclick = () => { S.speak = !S.speak; if (!S.speak && "speechSynthesis" in window) speechSynthesis.cancel(); setChip("tSpeak", S.speak); save(); };
-$("tSound").onclick = () => { S.sound = !S.sound; setChip("tSound", S.sound); save(); };
+$("tSpeak").onclick = () => { S.speak = !S.speak; if (!S.speak && "speechSynthesis" in window) speechSynthesis.cancel(); setChip("tSpeak", S.speak); save(); say("Ansage an"); };
+$("tSound").onclick = () => { S.sound = !S.sound; setChip("tSound", S.sound); save(); beep(880, 200); };
 $("rest").value = String(S.rest);
 $("rest").onchange = e => { S.rest = +e.target.value; save(); build(); render(); };
 
