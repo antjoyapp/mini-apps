@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trainingsplan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0EC; --surface:#FFFFFF; --ink:#15242A; --muted:#5A6A6F; --line:#D3DAD6; --track:#DFE5E1;
+  --set:#C93A2A; --rest:#1C7F66; --warm:#B87508; --stretch:#2F64AE;
+  --accent:var(--ink); --on-accent:#FFFFFF;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10191D; --surface:#17232A; --ink:#E8EEEC; --muted:#93A3A8; --line:#2A3A41; --track:#24343B;
+    --set:#F0614F; --rest:#3CC19A; --warm:#E9AA38; --stretch:#72A0E4;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10191D; --surface:#17232A; --ink:#E8EEEC; --muted:#93A3A8; --line:#2A3A41; --track:#24343B;
+  --set:#F0614F; --rest:#3CC19A; --warm:#E9AA38; --stretch:#72A0E4;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Barlow,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body[data-phase="set"]{--accent:var(--set);--on-accent:#fff}
+body[data-phase="rest"]{--accent:var(--rest);--on-accent:#fff}
+body[data-phase="warm"]{--accent:var(--warm);--on-accent:#15242A}
+body[data-phase="stretch"]{--accent:var(--stretch);--on-accent:#fff}
+body[data-phase="idle"],body[data-phase="done"]{--accent:var(--set);--on-accent:#fff}
+.cond{font-family:"Barlow Condensed","Arial Narrow",Barlow,system-ui,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:20px}
+@media (min-width:900px){
+  .wrap{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start;padding:24px}
+  .stage{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px)}
+}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+h1{font:700 2rem/1 "Barlow Condensed","Arial Narrow",sans-serif;margin:0}
+.meta{color:var(--muted);font-size:.95rem;font-variant-numeric:tabular-nums;margin:0}
+.bar{height:6px;background:var(--track);border-radius:3px;overflow:hidden;margin-top:12px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.phase{font:600 1.15rem/1.2 "Barlow Condensed","Arial Narrow",sans-serif;color:var(--accent);margin:14px 0 0;text-align:center}
+.ringbox{position:relative;width:min(76vw,330px);aspect-ratio:1;margin:6px auto 0}
+.ringbox svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.ring-track{stroke:var(--track)}
+.ring{stroke:var(--accent);transition:stroke-dashoffset .25s linear,stroke .3s}
+.center{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.big{font:700 clamp(4rem,19vw,6.4rem)/.9 "Barlow Condensed","Arial Narrow",sans-serif;font-variant-numeric:tabular-nums}
+.small{color:var(--muted);font-variant-numeric:tabular-nums;margin-top:6px}
+.title{font:700 1.9rem/1.1 "Barlow Condensed","Arial Narrow",sans-serif;text-align:center;margin:10px 0 2px}
+.sub{text-align:center;color:var(--muted)}
+.how{text-align:center;margin:8px auto 0;max-width:42ch}
+.list{margin:10px auto 0;padding-left:1.2em;max-width:46ch;font-size:.95rem}
+.list li{margin:2px 0}
+.next{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);text-align:center;color:var(--muted)}
+.next b{color:var(--ink);font-weight:600}
+.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+button,select{font:600 1rem Barlow,system-ui,sans-serif;color:var(--ink)}
+button{border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:10px 12px;min-height:50px;cursor:pointer;touch-action:manipulation}
+button:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.45;cursor:default}
+.primary{grid-column:1/-1;background:var(--accent);color:var(--on-accent);border:0;min-height:66px;font:700 1.45rem "Barlow Condensed","Arial Narrow",sans-serif}
+.toggles{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{border-radius:999px;padding:6px 14px;min-height:40px;font-size:.95rem;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:transparent}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip select{background:transparent;border:0;font-size:.95rem;padding:2px}
+.voice{margin:10px 0 0;font-size:.92rem;color:var(--muted);min-height:1.4em}
+.plan{padding:4px 4px 24px}
+.plan h2{font:700 1.6rem/1 "Barlow Condensed","Arial Narrow",sans-serif;margin:8px 0 6px}
+.block{display:grid;grid-template-columns:2.2rem 1fr;gap:2px 10px;padding:12px 0;border-top:1px solid var(--line)}
+.num{font:700 1.5rem/1.3 "Barlow Condensed","Arial Narrow",sans-serif;color:var(--muted);grid-row:span 3}
+.block.cur .num{color:var(--accent)}
+.block.done .num{color:var(--rest)}
+.block.done .exname{color:var(--muted)}
+.exrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.exname{background:none;border:0;padding:4px 0;min-height:40px;text-align:left;font-weight:600;border-radius:6px}
+.stepper{display:flex;align-items:center;gap:4px;flex:none}
+.stepper button{width:38px;min-height:38px;padding:0;border-radius:10px;font-size:1.15rem}
+.stepper output{min-width:2.6ch;text-align:center;font:700 1.25rem "Barlow Condensed","Arial Narrow",sans-serif;font-variant-numeric:tabular-nums}
+.bnote{color:var(--muted);font-size:.88rem}
+.fixed{color:var(--muted);font-size:.95rem}
+details{border-top:1px solid var(--line);padding:12px 0}
+summary{cursor:pointer;font-weight:600;min-height:32px}
+details p{margin:8px 0 0;color:var(--muted)}
+.rule{margin-top:4px;padding-top:12px;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body data-phase="idle">
+<div class="wrap">
+  <section class="stage" aria-label="Aktueller Schritt">
+    <div class="top">
+      <h1>Training</h1>
+      <p class="meta" id="clock">0:00 von 60:00</p>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="prog"></i></div>
+    <p class="phase" id="phase">Bereit</p>
+    <div class="ringbox" aria-hidden="true">
+      <svg viewBox="0 0 200 200">
+        <circle class="ring-track" cx="100" cy="100" r="88" fill="none" stroke-width="14"/>
+        <circle id="ring" class="ring" cx="100" cy="100" r="88" fill="none" stroke-width="14" stroke-linecap="round" stroke-dasharray="552.92" stroke-dashoffset="0"/>
+      </svg>
+      <div class="center"><div class="big" id="big">60</div><div class="small" id="small">Minuten</div></div>
+    </div>
+    <div aria-live="polite">
+      <div class="title" id="title">Oberkörper zu Hause</div>
+      <div class="sub" id="sub">Aufwärmen, 9 Blöcke, Dehnen</div>
+    </div>
+    <p class="how" id="how"></p>
+    <ul class="list" id="list" hidden></ul>
+    <div class="next" id="next"></div>
+    <div class="controls">
+      <button class="primary" id="main">Training starten</button>
+      <button id="back">Zurück</button>
+      <button id="pause">Pause</button>
+      <button id="plus">+15 s</button>
+    </div>
+    <div class="toggles">
+      <button class="chip" id="tVoice" aria-pressed="false">Sprachsteuerung</button>
+      <button class="chip" id="tSpeak" aria-pressed="true">Ansagen</button>
+      <button class="chip" id="tSound" aria-pressed="true">Töne</button>
+      <label class="chip">Pause
+        <select id="rest" aria-label="Pausenlänge">
+          <option value="45">45 s</option><option value="60">60 s</option><option value="75">75 s</option><option value="90">90 s</option>
+        </select>
+      </label>
+    </div>
+    <p class="voice" id="voice" aria-live="polite"></p>
+  </section>
+
+  <section class="plan" aria-label="Trainingsplan">
+    <h2>Plan</h2>
+    <p class="meta" id="last">Noch kein Training gespeichert.</p>
+    <div style="margin-top:12px" id="blocks"></div>
+    <details>
+      <summary>Sprachbefehle</summary>
+      <p>„weiter“ oder „fertig“: nächster Schritt. „Pause“: anhalten. „los“: fortsetzen. „zurück“: Schritt zurück. „länger“: 15 Sekunden mehr. „Zeit“: Restzeit ansagen.</p>
+    </details>
+    <p class="meta rule">Progression: Bei 8–12 Wiederholungen von 3 × 10 auf 3 × 12 steigern. Gelingen 3 × 12 sauber, Widerstand erhöhen und wieder bei 8–10 beginnen. Wiederholungen passt du hier mit − und + an.</p>
+  </section>
+</div>
+
+<script>
+const PLAN = {
+  warmup:{dur:300, items:[
+    "Arm Circles: vorwärts und rückwärts, je 10×",
+    "Arm Swings / Cross-Body Swings: 10 Sek.",
+    "Child’s Pose → Cobra / Upward Dog: 5×",
+    "Cat-Cow: 5×",
+    "Figure-4 Stretch: je Seite 10 Sek.",
+    "Sitzende Wirbelsäulenrotation: je Seite 10 Sek.",
+    "Butterfly Stretch: 10 Sek.",
+    "Butterfly Forward Press: 10 Sek."
+  ]},
+  blocks:[
+    {rounds:3, ex:[{id:"chin", name:"Chin-ups", reps:5, how:"Untergriff, schulterbreit greifen und Körper nach oben ziehen."}]},
+    {rounds:3, ex:[{id:"tyson", name:"Mike-Tyson-Push-ups", reps:11, how:"Dynamisch nach hinten unten und dann nach vorne drücken."}]},
+    {rounds:3, ex:[
+      {id:"dips", name:"Dips", reps:13, how:"Hände hinter dem Körper abstützen, Arme beugen und strecken."},
+      {id:"row", name:"Seated Band Row (Hammergriff)", reps:13, how:"Band um die Füße, Handflächen zueinander, Ellenbogen nah am Körper nach hinten ziehen."}]},
+    {rounds:3, ex:[{id:"lat", name:"Prone Band Lat Pull-down", reps:13, how:"Bauchlage, Beine und Oberkörper angehoben, Band von vorne zur Brust ziehen."}]},
+    {rounds:3, ex:[
+      {id:"tri", name:"Overhead Band Triceps Extension", reps:11, how:"Hände über dem Kopf, Ellenbogen beugen und strecken."},
+      {id:"press", name:"Band Shoulder Press", reps:11, how:"Auf dem Band stehen, beide Arme kontrolliert über den Kopf drücken."}]},
+    {rounds:3, ex:[{id:"raise", name:"Band Lateral + Front Raises", reps:10, how:"Seitlich hoch, zurück, vorne hoch, zurück = 1 Wiederholung."}]},
+    {rounds:3, ex:[{id:"upright", name:"Band Upright Row", reps:11, how:"Band nach oben ziehen, Ellenbogen zeigen nach außen und oben."}]},
+    {rounds:3, ex:[
+      {id:"planche", name:"Pseudo-Planche Push-ups", reps:10, how:"Hände Richtung Bauch, Finger nach außen, Körper gerade halten."},
+      {id:"hammer", name:"Band Hammer Curls", reps:13, how:"Neutraler Griff, Unterarme nach oben beugen."}]},
+    {rounds:3, ex:[
+      {id:"decline", name:"Erhöhte Push-ups", reps:10, how:"Füße erhöht, Körper gerade, kontrolliert runter und hoch drücken."},
+      {id:"curl", name:"Band Biceps Curls", reps:13, how:"Untergriff, Band kontrolliert Richtung Schulter ziehen."}]}
+  ],
+  cooldown:{dur:300, items:["Dein bisheriges Dehnprogramm."]}
+};
+
+const KEY = "trainingsplan-v1";
+let S = {reps:{}, rest:60, sound:true, speak:true, log:[]};
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+const reps = ex => (S.reps[ex.id] ?? ex.reps);
+
+let steps = [];
+function build(){
+  steps = [{kind:"timed", phase:"warm", title:"Aufwärmen", dur:PLAN.warmup.dur, list:PLAN.warmup.items}];
+  PLAN.blocks.forEach((b, bi) => {
+    for (let r = 1; r <= b.rounds; r++){
+      b.ex.forEach((ex, ei) => steps.push({kind:"set", phase:"set", block:bi, ex, round:r, rounds:b.rounds, pos:ei+1, len:b.ex.length}));
+      const lastOfAll = bi === PLAN.blocks.length-1 && r === b.rounds;
+      if (!lastOfAll) steps.push({kind:"timed", phase:"rest", title:"Pause", dur:S.rest, block:bi});
+    }
+  });
+  steps.push({kind:"timed", phase:"stretch", title:"Dehnen", dur:PLAN.cooldown.dur, list:PLAN.cooldown.items});
+}
+build();
+
+let idx = 0, started = false, paused = true, finished = false;
+let remaining = 0, setMs = 0, sessionMs = 0, lastTick = performance.now();
+let flags = {}, lastSec = null;
+
+const $ = id => document.getElementById(id);
+const fmt = ms => { const s = Math.max(0, Math.ceil(ms/1000)); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); };
+
+/* Ton */
+let ac;
+function beep(f=880, ms=150, vol=.25){
+  if (!S.sound) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(vol, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, ac.currentTime + ms/1000);
+    o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + ms/1000 + .02);
+  } catch(e) {}
+}
+
+/* Ansage */
+let deVoice = null;
+function pickVoice(){ try { deVoice = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith("de")) || null; } catch(e) {} }
+if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function say(t){
+  if (!S.speak || !("speechSynthesis" in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = "de-DE"; if (deVoice) u.voice = deVoice; u.rate = 1.03;
+    speechSynthesis.speak(u);
+  } catch(e) {}
+}
+
+/* Bildschirm wach halten */
+let wl = null;
+async function lock(){ try { if ("wakeLock" in navigator && !wl) { wl = await navigator.wakeLock.request("screen"); wl.addEventListener("release", () => wl = null); } } catch(e) {} }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && started && !paused) lock(); });
+
+function nextWork(from){
+  for (let i = from+1; i < steps.length; i++){
+    const s = steps[i];
+    if (s.kind === "set") return {text:`${s.ex.name}, ${reps(s.ex)} Wdh.`, speak:`${s.ex.name}, ${reps(s.ex)} Wiederholungen`};
+    if (s.phase === "stretch") return {text:"Dehnen, 5 Min.", speak:"Dehnen"};
+  }
+  return {text:"Ende", speak:"Ende"};
+}
+
+function enter(i, announce=true){
+  idx = Math.max(0, Math.min(i, steps.length-1));
+  const s = steps[idx];
+  remaining = s.kind === "timed" ? s.dur*1000 : 0;
+  setMs = 0; flags = {}; lastSec = null;
+  if (announce && started){
+    if (s.phase === "warm") say("Aufwärmen. Fünf Minuten.");
+    else if (s.phase === "stretch") say("Dehnen. Fünf Minuten.");
+    else if (s.phase === "rest") say("Pause. Als Nächstes: " + nextWork(idx).speak);
+    else {
+      const pre = s.len > 1 ? (s.pos === 1 ? `Runde ${s.round}. ` : "Direkt weiter. ") : `Satz ${s.round}. `;
+      say(pre + `${s.ex.name}. ${reps(s.ex)} Wiederholungen.`);
+    }
+  }
+  render();
+}
+
+function start(){
+  if (finished){ finished = false; idx = 0; sessionMs = 0; }
+  started = true; paused = false; lastTick = performance.now();
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch(e) {}
+  lock();
+  enter(idx);
+}
+
+function advance(){
+  if (!started){ start(); return; }
+  if (idx >= steps.length-1){ finish(); return; }
+  enter(idx+1);
+}
+
+function finish(){
+  started = false; paused = true; finished = true;
+  const today = new Date().toISOString().slice(0,10);
+  if (S.log[S.log.length-1] !== today) S.log.push(today);
+  S.log = S.log.slice(-60); save();
+  beep(990, 400); say("Training geschafft. Stark gemacht.");
+  if (wl) { try { wl.release(); } catch(e) {} }
+  render(); renderLast();
+}
+
+function togglePause(){
+  if (!started) return;
+  paused = !paused; lastTick = performance.now();
+  if (!paused) lock();
+  say(paused ? "Pausiert." : "Weiter.");
+  render();
+}
+function addTime(){ if (steps[idx].kind === "timed" && started){ remaining += 15000; flags = {}; render(); } }
+function back(){ if (started) enter(idx-1); }
+
+function tick(){
+  const now = performance.now(), dt = now - lastTick; lastTick = now;
+  if (started && !paused){
+    sessionMs += dt;
+    const s = steps[idx];
+    if (s.kind === "timed"){
+      remaining -= dt;
+      const sec = Math.ceil(remaining/1000);
+      if (sec !== lastSec){
+        if (sec >= 1 && sec <= 3) beep(660, 120);
+        lastSec = sec;
+      }
+      if (s.phase === "rest" && remaining <= 10000 && !flags.ten && s.dur > 15){ flags.ten = 1; say("Noch zehn Sekunden."); }
+      if (s.phase !== "rest" && remaining <= 60000 && !flags.min){ flags.min = 1; say("Noch eine Minute."); }
+      if (remaining <= 0){ beep(990, 350); advance(); return; }
+    } else setMs += dt;
+    render(true);
+  }
+}
+setInterval(tick, 200);
+
+const C = 552.92;
+function render(light){
+  const s = steps[idx];
+  const phase = finished ? "done" : started ? s.phase : "idle";
+  document.body.dataset.phase = phase;
+  $("clock").textContent = `${fmt(sessionMs)} von 60:00`;
+  $("prog").style.width = finished ? "100%" : started ? (idx/steps.length*100) + "%" : "0%";
+
+  let big, small, title, sub = "", how = "", list = null, off = 0, ph;
+  if (finished){
+    ph = "Geschafft"; big = Math.max(1, Math.round(sessionMs/60000)); small = "Minuten trainiert";
+    title = "Training geschafft"; sub = "Nächstes Training in zwei Tagen.";
+  } else if (!started){
+    ph = "Bereit"; big = "60"; small = "Minuten"; title = "Oberkörper zu Hause"; sub = "Aufwärmen, 9 Blöcke, Dehnen";
+  } else if (s.kind === "timed"){
+    ph = {warm:"Aufwärmen", rest:"Pause", stretch:"Dehnen"}[s.phase];
+    big = fmt(remaining); small = "übrig"; title = s.title;
+    off = C * (1 - Math.max(0, remaining)/(s.dur*1000));
+    if (s.phase === "rest") sub = `Nach Block ${s.block+1} von ${PLAN.blocks.length}`;
+    list = s.list || null;
+  } else {
+    ph = `Block ${s.block+1} von ${PLAN.blocks.length}`;
+    big = "×" + reps(s.ex); small = "Wiederholungen, " + fmt(setMs + 999);
+    title = s.ex.name; how = s.ex.how;
+    sub = s.len > 1 ? `Runde ${s.round} von ${s.rounds}, Übung ${s.pos} von ${s.len} im Paar` : `Satz ${s.round} von ${s.rounds}`;
+  }
+  if (started && paused) ph += " (pausiert)";
+  $("phase").textContent = ph;
+  $("big").textContent = big; $("small").textContent = small;
+  $("ring").style.strokeDashoffset = off;
+  if (light) return;
+
+  $("title").textContent = title; $("sub").textContent = sub; $("how").textContent = how;
+  const ul = $("list");
+  if (list){ ul.innerHTML = list.map(t => `<li>${t}</li>`).join(""); ul.hidden = false; } else { ul.hidden = true; ul.innerHTML = ""; }
+  $("next").innerHTML = started && !finished ? `Danach: <b>${nextWork(idx).text}</b>` : "";
+
+  $("main").textContent = finished ? "Neu starten" : !started ? "Training starten" : s.kind === "set" ? "Satz fertig" : "Überspringen";
+  $("pause").textContent = paused && started ? "Weiter" : "Pause";
+  $("pause").disabled = !started; $("back").disabled = !started || idx === 0;
+  $("plus").disabled = !started || s.kind !== "timed";
+  renderBlocks();
+}
+
+function blockRange(bi){
+  let a = -1, b = -1;
+  steps.forEach((s, i) => { if (s.kind === "set" && s.block === bi){ if (a < 0) a = i; b = i; } });
+  return [a, b];
+}
+
+function renderBlocks(){
+  const cur = started ? steps[idx] : null;
+  $("blocks").innerHTML = PLAN.blocks.map((b, bi) => {
+    const [a, z] = blockRange(bi);
+    const isCur = cur && cur.block === bi;
+    const done = finished || (started && idx > z && !isCur);
+    const note = b.ex.length > 1 ? `Übungspaar, ${b.rounds} Runden` : `${b.rounds} Sätze`;
+    const rows = b.ex.map(ex => `
+      <div class="exrow">
+        <button class="exname" data-jump="${bi}">${ex.name}</button>
+        <div class="stepper">
+          <button data-dec="${ex.id}" aria-label="${ex.name}: weniger">−</button>
+          <output aria-label="Wiederholungen">${reps(ex)}</output>
+          <button data-inc="${ex.id}" aria-label="${ex.name}: mehr">+</button>
+        </div>
+      </div>`).join("");
+    return `<div class="block${isCur ? " cur" : ""}${done ? " done" : ""}">
+      <div class="num">${done ? "✓" : bi+1}</div>
+      <div>${rows}<div class="bnote">${note}</div></div>
+    </div>`;
+  }).join("");
+}
+
+function renderLast(){
+  if (!S.log.length){ $("last").textContent = "Noch kein Training gespeichert."; return; }
+  const d = new Date(S.log[S.log.length-1] + "T12:00:00");
+  const n = new Date(d); n.setDate(d.getDate() + 2);
+  const f = x => x.toLocaleDateString("de-DE", {weekday:"short", day:"2-digit", month:"2-digit"});
+  $("last").textContent = `Letztes Training: ${f(d)}. Nächstes: ${f(n)}. Bisher ${S.log.length}× hier erfasst.`;
+}
+
+$("blocks").addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  const all = PLAN.blocks.flatMap(b => b.ex);
+  if (t.dataset.inc || t.dataset.dec){
+    const id = t.dataset.inc || t.dataset.dec, ex = all.find(x => x.id === id);
+    S.reps[id] = Math.max(1, Math.min(50, reps(ex) + (t.dataset.inc ? 1 : -1)));
+    save(); render();
+  } else if (t.dataset.jump !== undefined){
+    const [a] = blockRange(+t.dataset.jump);
+    if (!started){ finished = false; idx = a; start(); } else enter(a);
+  }
+});
+
+$("main").onclick = () => { if (finished){ start(); } else advance(); };
+$("pause").onclick = togglePause;
+$("plus").onclick = addTime;
+$("back").onclick = back;
+
+function setChip(id, on){ $(id).setAttribute("aria-pressed", on ? "true" : "false"); }
+setChip("tSpeak", S.speak); setChip("tSound", S.sound);
+$("tSpeak").onclick = () => { S.speak = !S.speak; if (!S.speak && "speechSynthesis" in window) speechSynthesis.cancel(); setChip("tSpeak", S.speak); save(); };
+$("tSound").onclick = () => { S.sound = !S.sound; setChip("tSound", S.sound); save(); };
+$("rest").value = String(S.rest);
+$("rest").onchange = e => { S.rest = +e.target.value; save(); build(); render(); };
+
+/* Sprachsteuerung */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, voiceOn = false;
+const status = t => $("voice").textContent = t;
+function handle(t){
+  if ("speechSynthesis" in window && speechSynthesis.speaking) return;
+  if (/zurück/.test(t)) { back(); status("Erkannt: zurück"); }
+  else if (/(länger|verlänger|plus|mehr zeit)/.test(t)) { addTime(); status("Erkannt: 15 Sekunden mehr"); }
+  else if (/(pause|stopp|stop|halt)/.test(t)) { if (started && !paused) togglePause(); status("Erkannt: Pause"); }
+  else if (/(fortsetzen|weitermachen|^los|\blos\b|start)/.test(t)) { if (!started) start(); else if (paused) togglePause(); status("Erkannt: los"); }
+  else if (/(weiter|fertig|erledigt|nächste|überspring)/.test(t)) { advance(); status("Erkannt: weiter"); }
+  else if (/(zeit|wie lange|wie viel)/.test(t)) { const s = steps[idx]; say(s.kind === "timed" ? `Noch ${Math.ceil(remaining/1000)} Sekunden.` : `${s.ex.name}, ${reps(s.ex)} Wiederholungen.`); status("Erkannt: Zeit"); }
+  else status(`Nicht verstanden: „${t}“`);
+}
+async function voiceStart(){
+  if (!SR){ status("Sprachsteuerung geht in diesem Browser nicht. Nutze Chrome oder Safari."); return; }
+  if (location.protocol === "file:"){
+    status("Chrome erlaubt das Mikrofon nicht dauerhaft für lokale Dateien (file://). Öffne die Seite über http://localhost:8000/training.html.");
+    return;
+  }
+  status("Mikrofon wird angefragt …");
+  try {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+      const st = await navigator.mediaDevices.getUserMedia({audio:true});
+      st.getTracks().forEach(t => t.stop());
+    }
+  } catch(e){
+    console.warn("getUserMedia", e);
+    status(e && e.name === "NotAllowedError"
+      ? "Kein Zugriff aufs Mikrofon. Prüfe die Chrome-Freigabe und in macOS: Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon → Google Chrome einschalten. Danach Chrome neu starten."
+      : `Mikrofon ließ sich nicht öffnen (${e && e.name || "unbekannt"}).`);
+    return;
+  }
+  try {
+    if (rec){ rec.onend = null; try { rec.abort(); } catch(e) {} }
+    rec = new SR(); rec.lang = "de-DE"; rec.continuous = true; rec.interimResults = false;
+    let listening = false, fails = 0;
+    rec.onstart = () => { listening = true; setChip("tVoice", true); status("Hört zu. Sag „weiter“, „Pause“, „los“ oder „zurück“."); };
+    rec.onresult = e => { fails = 0; const r = e.results[e.results.length-1]; if (r.isFinal) handle(r[0].transcript.toLowerCase().trim()); };
+    rec.onerror = e => {
+      console.warn("SpeechRecognition", e.error, e.message);
+      if (e.error === "no-speech" || e.error === "aborted") return;
+      const msg = {
+        "not-allowed":"Kein Zugriff aufs Mikrofon. Prüfe die Chrome-Freigabe und macOS: Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon → Google Chrome.",
+        "service-not-allowed":"Chrome blockiert die Spracherkennung. Prüfe, ob du in Chrome angemeldet bist und kein Inkognito-Fenster nutzt.",
+        "network":"Spracherkennung erreicht den Google-Server nicht. Prüfe Internet, VPN oder Werbeblocker.",
+        "audio-capture":"Kein Mikrofon gefunden.",
+        "language-not-supported":"Deutsch wird von der Spracherkennung nicht unterstützt."
+      }[e.error] || `Spracherkennung meldet einen Fehler: ${e.error}.`;
+      voiceOn = false; setChip("tVoice", false); status(msg);
+    };
+    rec.onend = () => {
+      const ran = listening; listening = false;
+      if (!voiceOn) return;
+      fails = ran ? 0 : fails + 1;
+      if (fails > 5){ voiceOn = false; setChip("tVoice", false); status("Spracherkennung bricht immer wieder ab. Lade die Seite neu und versuch es noch einmal."); return; }
+      setTimeout(() => { if (voiceOn){ try { rec.start(); } catch(e) {} } }, 300);
+    };
+    voiceOn = true;
+    setChip("tVoice", true);
+    status("Spracherkennung startet …");
+    rec.start();
+    setTimeout(() => { if (voiceOn && !listening && rec){ status("Spracherkennung startet nicht. Prüfe Internet, VPN oder Werbeblocker und lade die Seite neu."); } }, 5000);
+  } catch(e){ console.warn("SpeechRecognition start", e); voiceOn = false; setChip("tVoice", false); status(`Sprachsteuerung ließ sich nicht starten (${e && e.name || "unbekannt"}).`); }
+}
+function voiceStop(){ voiceOn = false; setChip("tVoice", false); try { rec && rec.stop(); } catch(e) {} status(""); }
+$("tVoice").onclick = () => voiceOn ? voiceStop() : voiceStart();
+
+renderLast();
+render();
+</script>
+</body>
+</html>
