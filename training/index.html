@@ -250,6 +250,9 @@ function say(t){
     const u = new SpeechSynthesisUtterance(t);
     u.lang = "de-DE"; if (deVoice) u.voice = deVoice; u.rate = 1.03;
     // Muss synchron bleiben: auf dem iPhone zählt nur speak() direkt im Tipp als Freigabe
+    // Ende schätzen, falls Safari kein onend meldet
+    spokenText = t.toLowerCase(); spokenUntil = Date.now() + t.length * 90 + 1500;
+    u.onend = u.onerror = () => { spokenUntil = Date.now() + 1500; };
     speechSynthesis.cancel();
     if (speechSynthesis.paused) speechSynthesis.resume();
     speechSynthesis.speak(u);
@@ -469,9 +472,9 @@ $("rest").onchange = e => { S.rest = +e.target.value; save(); build(); render();
 /* Sprachsteuerung */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null, voiceOn = false;
-const status = t => $("voice").textContent = t;
+let heardAt = 0;
+const status = t => { $("voice").textContent = t; if (/^(Erkannt|Nicht verstanden)/.test(t)) heardAt = Date.now(); };
 function handle(t){
-  if ("speechSynthesis" in window && speechSynthesis.speaking) return;
   if (/zurück/.test(t)) { back(); status("Erkannt: zurück"); }
   else if (/(länger|verlänger|plus|mehr zeit)/.test(t)) { addTime(); status("Erkannt: 15 Sekunden mehr"); }
   else if (/(pause|stopp|stop|halt)/.test(t)) { if (started && !paused) togglePause(); status("Erkannt: Pause"); }
@@ -504,39 +507,75 @@ async function voiceStart(){
     }
     // Andere Fehler: die Spracherkennung fragt das Mikrofon selbst an, also trotzdem versuchen
   }
-  try {
-    if (rec){ rec.onend = null; try { rec.abort(); } catch(e) {} }
-    rec = new SR(); rec.lang = "de-DE"; rec.continuous = true; rec.interimResults = false;
-    let listening = false, fails = 0;
-    rec.onstart = () => { listening = true; setChip("tVoice", true); status("Hört zu. Sag „weiter“, „Pause“, „los“ oder „zurück“."); };
-    rec.onresult = e => { fails = 0; const r = e.results[e.results.length-1]; if (r.isFinal) handle(r[0].transcript.toLowerCase().trim()); };
-    rec.onerror = e => {
-      console.warn("SpeechRecognition", e.error, e.message);
-      if (e.error === "no-speech" || e.error === "aborted") return;
-      const msg = {
-        "not-allowed":"Kein Zugriff aufs Mikrofon. Prüfe die Chrome-Freigabe und macOS: Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon → Google Chrome.",
-        "service-not-allowed": iOS ? "Spracherkennung ist aus. iPhone: Einstellungen → Allgemein → Tastatur → Diktierfunktion einschalten." : "Chrome blockiert die Spracherkennung. Prüfe, ob du in Chrome angemeldet bist und kein Inkognito-Fenster nutzt.",
-        "network":"Spracherkennung erreicht den Google-Server nicht. Prüfe Internet, VPN oder Werbeblocker.",
-        "audio-capture":"Kein Mikrofon gefunden.",
-        "language-not-supported":"Deutsch wird von der Spracherkennung nicht unterstützt."
-      }[e.error] || `Spracherkennung meldet einen Fehler: ${e.error}.`;
-      voiceOn = false; setChip("tVoice", false); session("playback"); status(msg);
-    };
-    rec.onend = () => {
-      const ran = listening; listening = false;
-      if (!voiceOn) return;
-      fails = ran ? 0 : fails + 1;
-      if (fails > 5){ voiceOn = false; setChip("tVoice", false); session("playback"); status("Spracherkennung bricht immer wieder ab. Lade die Seite neu und versuch es noch einmal."); return; }
-      setTimeout(() => { if (voiceOn){ try { rec.start(); } catch(e) {} } }, 300);
-    };
-    voiceOn = true;
-    setChip("tVoice", true);
-    status("Spracherkennung startet …");
-    rec.start();
-    setTimeout(() => { if (voiceOn && !listening && rec){ status("Spracherkennung startet nicht. Prüfe Internet, VPN oder Werbeblocker und lade die Seite neu."); } }, 5000);
-  } catch(e){ console.warn("SpeechRecognition start", e); voiceOn = false; setChip("tVoice", false); session("playback"); status(`Sprachsteuerung ließ sich nicht starten (${e && e.name || "unbekannt"}).`); }
+  voiceOn = true; fails = 0;
+  setChip("tVoice", true);
+  status("Spracherkennung startet …");
+  listen();
+  clearInterval(watchdog);
+  // Hält die Erkennung am Laufen, auch wenn Browser oder iPhone sie still beenden
+  watchdog = setInterval(() => { if (voiceOn && !listening && !starting && document.visibilityState === "visible") listen(); }, 1500);
 }
-function voiceStop(){ voiceOn = false; setChip("tVoice", false); try { rec && rec.stop(); } catch(e) {} session("playback"); status(""); }
+
+let listening = false, starting = false, fails = 0, watchdog = null;
+// Jede Runde bekommt eine frische Erkennung: kurze Runden laufen auf dem iPhone und in Chrome stabiler als eine Dauer-Erkennung
+function listen(){
+  if (!voiceOn) return;
+  if (rec){ rec.onend = rec.onerror = rec.onresult = rec.onstart = null; try { rec.abort(); } catch(e) {} }
+  const r = rec = new SR(); r.lang = "de-DE"; r.continuous = false; r.interimResults = false; r.maxAlternatives = 3;
+  starting = true;
+  r.onstart = () => {
+    if (r !== rec) return;
+    starting = false; listening = true; fails = 0;
+    // Die letzte Erkennung kurz stehen lassen
+    if (Date.now() - heardAt > 2500) status("Hört zu. Sag „weiter“, „Pause“, „los“ oder „zurück“.");
+  };
+  r.onresult = e => {
+    if (r !== rec) return;
+    for (let i = e.resultIndex; i < e.results.length; i++){
+      const res = e.results[i]; if (!res.isFinal) continue;
+      const alts = Array.from(res, a => a.transcript.toLowerCase().trim()).filter(Boolean);
+      const t = alts.find(a => !isEcho(a));
+      if (t) handle(t);
+    }
+  };
+  r.onerror = e => {
+    if (r !== rec) return;
+    console.warn("SpeechRecognition", e.error, e.message);
+    if (["no-speech", "aborted", "network"].includes(e.error)) return;
+    const msg = {
+      "not-allowed": iOS ? "Spracherkennung wurde gestoppt. Tippe auf „Sprachsteuerung“, um wieder zuzuhören." : "Kein Zugriff aufs Mikrofon. Prüfe die Chrome-Freigabe und macOS: Systemeinstellungen → Datenschutz & Sicherheit → Mikrofon → Google Chrome.",
+      "service-not-allowed": iOS ? "Spracherkennung ist aus. iPhone: Einstellungen → Allgemein → Tastatur → Diktierfunktion einschalten." : "Chrome blockiert die Spracherkennung. Prüfe, ob du in Chrome angemeldet bist und kein Inkognito-Fenster nutzt.",
+      "audio-capture":"Kein Mikrofon gefunden.",
+      "language-not-supported":"Deutsch wird von der Spracherkennung nicht unterstützt."
+    }[e.error] || `Spracherkennung meldet einen Fehler: ${e.error}.`;
+    voiceStop(); status(msg);
+  };
+  r.onend = () => {
+    if (r !== rec) return;
+    const ran = listening; listening = false; starting = false;
+    if (!voiceOn) return;
+    if (!ran && ++fails >= 8) status("Spracherkennung hakt. Versucht es weiter … Hilft das nicht, tippe zweimal auf „Sprachsteuerung“.");
+    setTimeout(() => { if (voiceOn && !listening && !starting) listen(); }, ran ? 150 : 600);
+  };
+  try { r.start(); }
+  catch(e){ console.warn("SpeechRecognition start", e); starting = false; }
+}
+
+// Die eigene Ansage nicht als Befehl werten (z. B. „Pause. Als Nächstes …“)
+let spokenText = "", spokenUntil = 0;
+// Kurze Befehle („weiter“) gelten immer; nur längere Sätze, die fast ganz aus der Ansage stammen, sind Echo
+function isEcho(t){
+  if (!spokenText || Date.now() > spokenUntil) return false;
+  const words = t.split(/\s+/).filter(Boolean);
+  if (words.length < 3) return false;
+  return words.filter(w => spokenText.includes(w)).length / words.length >= .6;
+}
+
+function voiceStop(){
+  voiceOn = false; listening = starting = false; clearInterval(watchdog); setChip("tVoice", false);
+  if (rec){ rec.onend = rec.onerror = rec.onresult = rec.onstart = null; try { rec.abort(); } catch(e) {} rec = null; }
+  session("playback"); status("");
+}
 $("tVoice").onclick = () => voiceOn ? voiceStop() : voiceStart();
 
 renderLast();
