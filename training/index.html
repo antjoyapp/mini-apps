@@ -33,7 +33,7 @@
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Barlow,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-body[data-phase="set"]{--accent:var(--set);--on-accent:#fff}
+body[data-phase="set"],body[data-phase="hold"]{--accent:var(--set);--on-accent:#fff}
 body[data-phase="rest"]{--accent:var(--rest);--on-accent:#fff}
 body[data-phase="warm"]{--accent:var(--warm);--on-accent:#15242A}
 body[data-phase="stretch"]{--accent:var(--stretch);--on-accent:#fff}
@@ -115,7 +115,7 @@ details p{margin:8px 0 0;color:var(--muted)}
     </div>
     <div aria-live="polite">
       <div class="title" id="title">Oberkörper zu Hause</div>
-      <div class="sub" id="sub">Aufwärmen, 9 Blöcke, Dehnen</div>
+      <div class="sub" id="sub">Aufwärmen, 10 Blöcke, Dehnen</div>
     </div>
     <p class="how" id="how"></p>
     <ul class="list" id="list" hidden></ul>
@@ -164,23 +164,24 @@ const PLAN = {
     "Butterfly Forward Press: 10 Sek."
   ]},
   blocks:[
-    {rounds:3, ex:[{id:"chin", name:"Chin-ups", reps:5, how:"Untergriff, schulterbreit greifen und Körper nach oben ziehen."}]},
-    {rounds:3, ex:[{id:"tyson", name:"Mike-Tyson-Push-ups", reps:11, how:"Dynamisch nach hinten unten und dann nach vorne drücken."}]},
+    {rounds:3, ex:[{id:"chin", name:"Chin-ups", reps:6, how:"Untergriff, schulterbreit greifen und Körper nach oben ziehen."}]},
+    {rounds:3, ex:[{id:"tyson", name:"Mike-Tyson-Push-ups", reps:13, how:"Dynamisch nach hinten unten und dann nach vorne drücken."}]},
     {rounds:3, ex:[
       {id:"dips", name:"Dips", reps:13, how:"Hände hinter dem Körper abstützen, Arme beugen und strecken."},
       {id:"row", name:"Seated Band Row (Hammergriff)", reps:13, how:"Band um die Füße, Handflächen zueinander, Ellenbogen nah am Körper nach hinten ziehen."}]},
     {rounds:3, ex:[{id:"lat", name:"Prone Band Lat Pull-down", reps:13, how:"Bauchlage, Beine und Oberkörper angehoben, Band von vorne zur Brust ziehen."}]},
     {rounds:3, ex:[
-      {id:"tri", name:"Overhead Band Triceps Extension", reps:11, how:"Hände über dem Kopf, Ellenbogen beugen und strecken."},
-      {id:"press", name:"Band Shoulder Press", reps:11, how:"Auf dem Band stehen, beide Arme kontrolliert über den Kopf drücken."}]},
-    {rounds:3, ex:[{id:"raise", name:"Band Lateral + Front Raises", reps:10, how:"Seitlich hoch, zurück, vorne hoch, zurück = 1 Wiederholung."}]},
-    {rounds:3, ex:[{id:"upright", name:"Band Upright Row", reps:11, how:"Band nach oben ziehen, Ellenbogen zeigen nach außen und oben."}]},
+      {id:"tri", name:"Overhead Band Triceps Extension", reps:13, how:"Hände über dem Kopf, Ellenbogen beugen und strecken."},
+      {id:"press", name:"Band Shoulder Press", reps:13, how:"Auf dem Band stehen, beide Arme kontrolliert über den Kopf drücken."}]},
+    {rounds:3, ex:[{id:"raise", name:"Band Lateral + Front Raises", reps:13, how:"Seitlich hoch, zurück, vorne hoch, zurück = 1 Wiederholung."}]},
+    {rounds:3, ex:[{id:"upright", name:"Band Upright Row", reps:13, how:"Band nach oben ziehen, Ellenbogen zeigen nach außen und oben."}]},
     {rounds:3, ex:[
-      {id:"planche", name:"Pseudo-Planche Push-ups", reps:10, how:"Hände Richtung Bauch, Finger nach außen, Körper gerade halten."},
+      {id:"planche", name:"Pseudo-Planche Push-ups", reps:13, how:"Hände Richtung Bauch, Finger nach außen, Körper gerade halten."},
       {id:"hammer", name:"Band Hammer Curls", reps:13, how:"Neutraler Griff, Unterarme nach oben beugen."}]},
     {rounds:3, ex:[
-      {id:"decline", name:"Erhöhte Push-ups", reps:10, how:"Füße erhöht, Körper gerade, kontrolliert runter und hoch drücken."},
-      {id:"curl", name:"Band Biceps Curls", reps:13, how:"Untergriff, Band kontrolliert Richtung Schulter ziehen."}]}
+      {id:"decline", name:"Erhöhte Push-ups", reps:13, how:"Füße erhöht, Körper gerade, kontrolliert runter und hoch drücken."},
+      {id:"curl", name:"Band Biceps Curls", reps:13, how:"Untergriff, Band kontrolliert Richtung Schulter ziehen."}]},
+    {rounds:1, ex:[{id:"plank", name:"Planking", dur:60, how:"Unterarme unter den Schultern, Körper gerade, Bauch und Po fest."}]}
   ],
   cooldown:{dur:300, items:["Dein bisheriges Dehnprogramm."]}
 };
@@ -189,6 +190,8 @@ const KEY = "trainingsplan-v1";
 let S = {reps:{}, rest:60, sound:true, speak:true, log:[]};
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e) {}
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+// Neuer Plan (Nov. 2026): alte Anpassungen einmal verwerfen, damit die neuen Wiederholungen gelten
+if (S.plan !== 2){ S.reps = {}; S.plan = 2; save(); }
 const reps = ex => (S.reps[ex.id] ?? ex.reps);
 
 let steps = [];
@@ -196,7 +199,9 @@ function build(){
   steps = [{kind:"timed", phase:"warm", title:"Aufwärmen", dur:PLAN.warmup.dur, list:PLAN.warmup.items}];
   PLAN.blocks.forEach((b, bi) => {
     for (let r = 1; r <= b.rounds; r++){
-      b.ex.forEach((ex, ei) => steps.push({kind:"set", phase:"set", block:bi, ex, round:r, rounds:b.rounds, pos:ei+1, len:b.ex.length}));
+      b.ex.forEach((ex, ei) => steps.push(ex.dur
+        ? {kind:"timed", phase:"hold", title:ex.name, dur:ex.dur, block:bi, ex, round:r, rounds:b.rounds}
+        : {kind:"set", phase:"set", block:bi, ex, round:r, rounds:b.rounds, pos:ei+1, len:b.ex.length}));
       const lastOfAll = bi === PLAN.blocks.length-1 && r === b.rounds;
       if (!lastOfAll) steps.push({kind:"timed", phase:"rest", title:"Pause", dur:S.rest, block:bi});
     }
@@ -286,6 +291,7 @@ function nextWork(from){
   for (let i = from+1; i < steps.length; i++){
     const s = steps[i];
     if (s.kind === "set") return {text:`${s.ex.name}, ${reps(s.ex)} Wdh.`, speak:`${s.ex.name}, ${reps(s.ex)} Wiederholungen`};
+    if (s.phase === "hold") return {text:`${s.ex.name}, ${s.dur} Sek.`, speak:`${s.ex.name}, ${s.dur} Sekunden`};
     if (s.phase === "stretch") return {text:"Dehnen, 5 Min.", speak:"Dehnen"};
   }
   return {text:"Ende", speak:"Ende"};
@@ -300,6 +306,7 @@ function enter(i, announce=true){
     if (s.phase === "warm") say("Aufwärmen. Fünf Minuten.");
     else if (s.phase === "stretch") say("Dehnen. Fünf Minuten.");
     else if (s.phase === "rest") say("Pause. Als Nächstes: " + nextWork(idx).speak);
+    else if (s.phase === "hold") say(`${s.ex.name}. ${s.dur} Sekunden. Los.`);
     else {
       const pre = s.len > 1 ? (s.pos === 1 ? `Runde ${s.round}. ` : "Direkt weiter. ") : `Satz ${s.round}. `;
       say(pre + `${s.ex.name}. ${reps(s.ex)} Wiederholungen.`);
@@ -354,8 +361,8 @@ function tick(){
         if (sec >= 1 && sec <= 3) beep(660, 120);
         lastSec = sec;
       }
-      if (s.phase === "rest" && remaining <= 10000 && !flags.ten && s.dur > 15){ flags.ten = 1; say("Noch zehn Sekunden."); }
-      if (s.phase !== "rest" && remaining <= 60000 && !flags.min){ flags.min = 1; say("Noch eine Minute."); }
+      if ((s.phase === "rest" || s.phase === "hold") && remaining <= 10000 && !flags.ten && s.dur > 15){ flags.ten = 1; say("Noch zehn Sekunden."); }
+      if ((s.phase === "warm" || s.phase === "stretch") && remaining <= 60000 && !flags.min){ flags.min = 1; say("Noch eine Minute."); }
       if (remaining <= 0){ beep(990, 350); advance(); return; }
     } else setMs += dt;
     render(true);
@@ -376,12 +383,13 @@ function render(light){
     ph = "Geschafft"; big = Math.max(1, Math.round(sessionMs/60000)); small = "Minuten trainiert";
     title = "Training geschafft"; sub = "Nächstes Training in zwei Tagen.";
   } else if (!started){
-    ph = "Bereit"; big = "60"; small = "Minuten"; title = "Oberkörper zu Hause"; sub = "Aufwärmen, 9 Blöcke, Dehnen";
+    ph = "Bereit"; big = "60"; small = "Minuten"; title = "Oberkörper zu Hause"; sub = "Aufwärmen, 10 Blöcke, Dehnen";
   } else if (s.kind === "timed"){
-    ph = {warm:"Aufwärmen", rest:"Pause", stretch:"Dehnen"}[s.phase];
+    ph = s.phase === "hold" ? `Block ${s.block+1} von ${PLAN.blocks.length}` : {warm:"Aufwärmen", rest:"Pause", stretch:"Dehnen"}[s.phase];
     big = fmt(remaining); small = "übrig"; title = s.title;
     off = C * (1 - Math.max(0, remaining)/(s.dur*1000));
     if (s.phase === "rest") sub = `Nach Block ${s.block+1} von ${PLAN.blocks.length}`;
+    if (s.phase === "hold"){ sub = "Halten"; how = s.ex.how; }
     list = s.list || null;
   } else {
     ph = `Block ${s.block+1} von ${PLAN.blocks.length}`;
@@ -409,7 +417,7 @@ function render(light){
 
 function blockRange(bi){
   let a = -1, b = -1;
-  steps.forEach((s, i) => { if (s.kind === "set" && s.block === bi){ if (a < 0) a = i; b = i; } });
+  steps.forEach((s, i) => { if ((s.kind === "set" || s.phase === "hold") && s.block === bi){ if (a < 0) a = i; b = i; } });
   return [a, b];
 }
 
@@ -419,15 +427,15 @@ function renderBlocks(){
     const [a, z] = blockRange(bi);
     const isCur = cur && cur.block === bi;
     const done = finished || (started && idx > z && !isCur);
-    const note = b.ex.length > 1 ? `Übungspaar, ${b.rounds} Runden` : `${b.rounds} Sätze`;
+    const note = b.ex.length > 1 ? `Übungspaar, ${b.rounds} Runden` : b.rounds === 1 ? "1 Satz" : `${b.rounds} Sätze`;
     const rows = b.ex.map(ex => `
       <div class="exrow">
         <button class="exname" data-jump="${bi}">${ex.name}</button>
-        <div class="stepper">
+        ${ex.dur ? `<div class="stepper"><output aria-label="Dauer">${ex.dur} Sek.</output></div>` : `<div class="stepper">
           <button data-dec="${ex.id}" aria-label="${ex.name}: weniger">−</button>
           <output aria-label="Wiederholungen">${reps(ex)}</output>
           <button data-inc="${ex.id}" aria-label="${ex.name}: mehr">+</button>
-        </div>
+        </div>`}
       </div>`).join("");
     return `<div class="block${isCur ? " cur" : ""}${done ? " done" : ""}">
       <div class="num">${done ? "✓" : bi+1}</div>
