@@ -102,7 +102,7 @@ details p{margin:8px 0 0;color:var(--muted)}
   <section class="stage" aria-label="Aktueller Schritt">
     <div class="top">
       <h1>Training</h1>
-      <p class="meta" id="clock">0:00 von 60:00</p>
+      <p class="meta" id="clock">0:00 von 70:00</p>
     </div>
     <div class="bar" aria-hidden="true"><i id="prog"></i></div>
     <p class="phase" id="phase">Bereit</p>
@@ -111,7 +111,7 @@ details p{margin:8px 0 0;color:var(--muted)}
         <circle class="ring-track" cx="100" cy="100" r="88" fill="none" stroke-width="14"/>
         <circle id="ring" class="ring" cx="100" cy="100" r="88" fill="none" stroke-width="14" stroke-linecap="round" stroke-dasharray="552.92" stroke-dashoffset="0"/>
       </svg>
-      <div class="center"><div class="big" id="big">60</div><div class="small" id="small">Minuten</div></div>
+      <div class="center"><div class="big" id="big">70</div><div class="small" id="small">Minuten</div></div>
     </div>
     <div aria-live="polite">
       <div class="title" id="title">Oberkörper zu Hause</div>
@@ -146,13 +146,13 @@ details p{margin:8px 0 0;color:var(--muted)}
     <details>
       <summary>Hanteln (Gewicht ohne Griffe)</summary>
       <div id="kg" style="margin-top:6px"></div>
-      <p>Startaufbau: Langhantel je Seite 5 + 5 + 2 + 2 kg. Kurzhanteln je Seite 2,5 + 2,5 kg. Vor Block 7 an eine Kurzhantel 1,25 kg dazu (Trizeps 11,25 kg). Vor Block 8 auf je 5 kg umbauen, nach dem Training wieder auf je 10 kg. Zum Steigern bleiben 3 × 1,25 und 4 × 1 kg.</p>
+      <p>Startaufbau: Langhantel je Seite 5 + 5 + 2 + 2 kg. Kurzhanteln je Seite 2,5 + 2,5 kg. Vor Block 7 an eine Kurzhantel 1,25 kg dazu (Trizeps 11,25 kg), die andere bleibt für die Konzentrations-Curls bei 10 kg. Vor Block 8 auf je 5 kg umbauen, nach dem Training wieder auf je 10 kg. Zum Steigern bleiben 3 × 1,25 und 4 × 1 kg.</p>
     </details>
     <details>
       <summary>Sprachbefehle</summary>
       <p>„weiter“ oder „fertig“: nächster Schritt. „Pause“: anhalten. „los“: fortsetzen. „zurück“: Schritt zurück. „länger“: 15 Sekunden mehr. „Zeit“: Restzeit ansagen.</p>
     </details>
-    <p class="meta rule">Progression mit Hanteln: Mit 3 × 10 beginnen (Pullover, Seitheben, Reverse Flys: 3 × 12) und um je 1 Wiederholung steigern. Gelingen 3 × 12 sauber (Pullover, Seitheben, Reverse Flys: 3 × 15), Gewicht erhöhen, oben unter „Hanteln“ eintragen und wieder mit 3 × 8 beginnen. Ohne Hanteln: Wiederholungen schrittweise steigern. Wiederholungen passt du hier mit − und + an.</p>
+    <p class="meta rule">Progression mit Hanteln: Mit 3 × 10 beginnen (Pullover, Seitheben, Reverse Flys, Flys am Boden: 3 × 12) und um je 1 Wiederholung steigern. Gelingen 3 × 12 sauber (Pullover, Seitheben, Reverse Flys, Flys am Boden: 3 × 15), Gewicht erhöhen, oben unter „Hanteln“ eintragen und wieder mit 3 × 8 beginnen. Ohne Hanteln: Wiederholungen schrittweise steigern. Wiederholungen passt du hier mit − und + an.</p>
   </section>
 </div>
 
@@ -170,7 +170,9 @@ const PLAN = {
   ]},
   blocks:[
     {rounds:3, ex:[{id:"chin", name:"Chin-ups", reps:6, how:"Untergriff, schulterbreit greifen und Körper nach oben ziehen."}]},
-    {rounds:3, ex:[{id:"bbrow", name:"Langhantel-Rudern vorgebeugt", reps:12, gear:"lh", how:"Knie leicht gebeugt, Rücken gerade, Oberkörper fast waagerecht. Stange zum Bauchnabel ziehen, Ellenbogen nah am Körper."}]},
+    {rounds:3, ex:[
+      {id:"bbrow", name:"Langhantel-Rudern vorgebeugt", reps:12, gear:"lh", how:"Knie leicht gebeugt, Rücken gerade, Oberkörper fast waagerecht. Stange zum Bauchnabel ziehen, Ellenbogen nah am Körper."},
+      {id:"floorpress", name:"Kurzhantel-Bodendrücken", reps:10, gear:"kh", how:"Rückenlage, Knie gebeugt, Hanteln über der Brust. Senken, bis die Oberarme den Boden berühren, kurz ablegen, dann hochdrücken."}]},
     {rounds:3, ex:[
       {id:"tyson", name:"Mike-Tyson-Push-ups", reps:12, how:"Dynamisch nach hinten unten und dann nach vorne drücken."},
       {id:"pullover", name:"Kurzhantel-Pullover", reps:12, gear:"kh1", how:"Rückenlage, eine Hantel mit beiden Händen über der Brust. Arme leicht gebeugt nach hinten über den Kopf senken, bis knapp über den Boden, dann zurück."}]},
@@ -181,13 +183,17 @@ const PLAN = {
     {rounds:3, ex:[
       {id:"decline", name:"Erhöhte Push-ups", reps:12, how:"Füße erhöht, Körper gerade, kontrolliert runter und hoch drücken."},
       {id:"dbhammer", name:"Hammer Curls", reps:10, gear:"kh", how:"Handflächen zeigen zueinander, Ellenbogen am Körper, ohne Schwung."}]},
-    {rounds:3, ex:[{id:"dbtri", name:"Trizeps über Kopf", reps:12, gear:"kht", how:"Eine Hantel mit beiden Händen hinter den Kopf senken, Ellenbogen zeigen nach oben. Arme strecken."}]},
+    {rounds:3, ex:[
+      {id:"dbtri", name:"Trizeps über Kopf", reps:12, gear:"kht", how:"Eine Hantel mit beiden Händen hinter den Kopf senken, Ellenbogen zeigen nach oben. Arme strecken."},
+      {id:"concurl", name:"Konzentrations-Curls", reps:10, gear:"kh2", how:"Je Arm: sitzend, Ellenbogen innen am Oberschenkel abstützen. Ohne Schwung hochbeugen, langsam ablassen. Erst links, dann rechts."}]},
     {rounds:3, ex:[
       {id:"lateral", name:"Seitheben", reps:12, gear:"khl", how:"Arme leicht gebeugt seitlich bis Schulterhöhe heben, kurz halten, langsam ablassen. Kein Schwung."},
-      {id:"rearfly", name:"Reverse Flys", reps:12, gear:"khl", how:"Vorgebeugt wie beim Rudern, Arme leicht gebeugt seitlich nach außen heben, Schulterblätter zusammen."}]},
+      {id:"rearfly", name:"Reverse Flys", reps:12, gear:"khl", how:"Vorgebeugt wie beim Rudern, Arme leicht gebeugt seitlich nach außen heben, Schulterblätter zusammen."},
+      {id:"floorfly", name:"Flys am Boden", reps:12, gear:"khl", how:"Rückenlage, Arme über der Brust, leicht gebeugt. Seitlich öffnen, bis die Oberarme den Boden berühren, im Bogen zurück. Ellenbogen bleiben gleich gebeugt."}]},
     {rounds:1, ex:[{id:"plank", name:"Planking", dur:60, how:"Unterarme unter den Schultern, Körper gerade, Bauch und Po fest."}]}
   ],
-  cooldown:{dur:300, items:["Dein bisheriges Dehnprogramm."]}
+  cooldown:{dur:300, items:["Dein bisheriges Dehnprogramm."]},
+  min:70
 };
 
 const KEY = "trainingsplan-v1";
@@ -200,14 +206,14 @@ function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) 
 if (S.plan !== 4){ S.reps = {}; S.plan = 4; save(); }
 const reps = ex => (S.reps[ex.id] ?? ex.reps);
 
-/* Hanteln: lh = Langhantel, kh = Kurzhanteln schwer (kh1 = eine davon), kht = eine Kurzhantel für Trizeps, khl = Kurzhanteln leicht */
+/* Hanteln: lh = Langhantel, kh = Kurzhanteln schwer (kh1 = eine davon, kh2 = die zweite neben der Trizeps-Hantel), kht = eine Kurzhantel für Trizeps, khl = Kurzhanteln leicht */
 const kgTxt = n => n.toLocaleString("de-DE");
-const kgOf = g => g === "lh" ? S.kg.lh : g === "kh" || g === "kh1" ? S.kg.kh : g === "kht" ? S.kg.kht : g === "khl" ? S.kg.khl : null;
+const kgOf = g => g === "lh" ? S.kg.lh : g === "kh" || g === "kh1" || g === "kh2" ? S.kg.kh : g === "kht" ? S.kg.kht : g === "khl" ? S.kg.khl : null;
 const dbKg = g => g && g !== "lh" ? kgOf(g) : null;
 function gearTxt(g){
   if (!g) return "";
   const k = kgTxt(kgOf(g));
-  return g === "lh" ? `Langhantel ${k} kg` : g === "kh1" || g === "kht" ? `1 Kurzhantel, ${k} kg` : `Kurzhanteln je ${k} kg`;
+  return g === "lh" ? `Langhantel ${k} kg` : g === "kh1" || g === "kh2" || g === "kht" ? `1 Kurzhantel, ${k} kg` : `Kurzhanteln je ${k} kg`;
 }
 
 let steps = [];
@@ -236,6 +242,7 @@ function build(){
 function held(g, a, b){
   if (g === "kh" || g === "khl") return [kgOf(g), kgOf(g)];
   if (g === "kh1" || g === "kht") return [kgOf(g), b ?? S.kg.kh];
+  if (g === "kh2") return [a ?? S.kg.kh, kgOf(g)];
   return [a, b];
 }
 function changeTxt(c){
@@ -415,7 +422,7 @@ function render(light){
   const s = steps[idx];
   const phase = finished ? "done" : started ? s.phase : "idle";
   document.body.dataset.phase = phase;
-  $("clock").textContent = `${fmt(sessionMs)} von 60:00`;
+  $("clock").textContent = `${fmt(sessionMs)} von ${PLAN.min}:00`;
   $("prog").style.width = finished ? "100%" : started ? (idx/steps.length*100) + "%" : "0%";
 
   let big, small, title, sub = "", how = "", list = null, off = 0, ph;
@@ -424,7 +431,7 @@ function render(light){
     title = "Training geschafft";
     sub = (S.kg.kh !== S.kg.khl ? `Kurzhanteln wieder auf ${kgTxt(S.kg.kh)} kg bauen. ` : "") + "Nächstes Training in zwei Tagen.";
   } else if (!started){
-    ph = "Bereit"; big = "60"; small = "Minuten"; title = "Oberkörper zu Hause"; sub = `Aufwärmen, ${PLAN.blocks.length} Blöcke, Dehnen`;
+    ph = "Bereit"; big = PLAN.min; small = "Minuten"; title = "Oberkörper zu Hause"; sub = `Aufwärmen, ${PLAN.blocks.length} Blöcke, Dehnen`;
   } else if (s.kind === "timed"){
     ph = s.phase === "hold" ? `Block ${s.block+1} von ${PLAN.blocks.length}` : {warm:"Aufwärmen", rest:"Pause", stretch:"Dehnen"}[s.phase];
     big = fmt(remaining); small = "übrig"; title = s.title;
@@ -439,7 +446,7 @@ function render(light){
     ph = `Block ${s.block+1} von ${PLAN.blocks.length}`;
     big = "×" + reps(s.ex); small = "Wiederholungen, " + fmt(setMs + 999);
     title = s.ex.name; how = s.ex.how;
-    sub = s.len > 1 ? `Runde ${s.round} von ${s.rounds}, Übung ${s.pos} von ${s.len} im Paar` : `Satz ${s.round} von ${s.rounds}`;
+    sub = s.len > 1 ? `Runde ${s.round} von ${s.rounds}, Übung ${s.pos} von ${s.len}` + (s.len === 2 ? " im Paar" : "") : `Satz ${s.round} von ${s.rounds}`;
     if (s.ex.gear) sub += ` · ${gearTxt(s.ex.gear)}`;
   }
   if (started && paused) ph += " (pausiert)";
@@ -473,7 +480,7 @@ function renderBlocks(){
     const isCur = cur && cur.block === bi;
     const done = finished || (started && idx > z && !isCur);
     const gear = [...new Set(b.ex.map(ex => gearTxt(ex.gear)).filter(Boolean))];
-    const note = (b.ex.length > 1 ? `Übungspaar, ${b.rounds} Runden` : b.rounds === 1 ? "1 Satz" : `${b.rounds} Sätze`) + gear.map(g => ` · ${g}`).join("");
+    const note = (b.ex.length > 2 ? `${b.ex.length} Übungen, ${b.rounds} Runden` : b.ex.length > 1 ? `Übungspaar, ${b.rounds} Runden` : b.rounds === 1 ? "1 Satz" : `${b.rounds} Sätze`) + gear.map(g => ` · ${g}`).join("");
     const rows = b.ex.map(ex => `
       <div class="exrow">
         <button class="exname" data-jump="${bi}">${ex.name}</button>
