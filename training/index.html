@@ -146,7 +146,7 @@ details p{margin:8px 0 0;color:var(--muted)}
     <details>
       <summary>Hanteln (Gewicht ohne Griffe)</summary>
       <div id="kg" style="margin-top:6px"></div>
-      <p>Startaufbau: Langhantel je Seite 5 + 5 + 2 + 2 kg. Kurzhanteln je Seite 2,5 + 2,5 kg. Vor Block 7 an eine Kurzhantel 1,25 kg dazu (Trizeps 11,25 kg), die andere bleibt für die Konzentrations-Curls bei 10 kg. Vor Block 8 auf je 5 kg umbauen, nach dem Training wieder auf je 10 kg. Zum Steigern bleiben 3 × 1,25 und 4 × 1 kg.</p>
+      <p>Startaufbau: Langhantel je Seite 5 + 5 + 2,5 + 2,5 kg. Kurzhanteln je Seite 2,5 + 2,5 kg. Vor Block 7 an eine Kurzhantel je Seite 1,25 kg dazu (Trizeps 12,5 kg), die andere bleibt für die Konzentrations-Curls bei 10 kg. Vor Block 8 auf je 5 kg umbauen, nach dem Training wieder auf je 10 kg. Zum Steigern bleiben 4 × 2, 2 × 1,25 und 4 × 1 kg.</p>
     </details>
     <details>
       <summary>Sprachbefehle</summary>
@@ -171,7 +171,7 @@ const PLAN = {
   blocks:[
     {rounds:3, ex:[{id:"chin", name:"Chin-ups", reps:6, how:"Untergriff, schulterbreit greifen und Körper nach oben ziehen."}]},
     {rounds:3, ex:[
-      {id:"bbrow", name:"Langhantel-Rudern vorgebeugt", reps:12, gear:"lh", how:"Knie leicht gebeugt, Rücken gerade, Oberkörper fast waagerecht. Stange zum Bauchnabel ziehen, Ellenbogen nah am Körper."},
+      {id:"bbrow", name:"Langhantel-Rudern vorgebeugt", reps:8, gear:"lh", how:"Knie leicht gebeugt, Rücken gerade, Oberkörper fast waagerecht. Stange zum Bauchnabel ziehen, Ellenbogen nah am Körper."},
       {id:"floorpress", name:"Kurzhantel-Bodendrücken", reps:10, gear:"kh", how:"Rückenlage, Knie gebeugt, Hanteln über der Brust. Senken, bis die Oberarme den Boden berühren, kurz ablegen, dann hochdrücken."}]},
     {rounds:3, ex:[
       {id:"tyson", name:"Mike-Tyson-Push-ups", reps:12, how:"Dynamisch nach hinten unten und dann nach vorne drücken."},
@@ -184,7 +184,7 @@ const PLAN = {
       {id:"decline", name:"Erhöhte Push-ups", reps:12, how:"Füße erhöht, Körper gerade, kontrolliert runter und hoch drücken."},
       {id:"dbhammer", name:"Hammer Curls", reps:10, gear:"kh", how:"Handflächen zeigen zueinander, Ellenbogen am Körper, ohne Schwung."}]},
     {rounds:3, ex:[
-      {id:"dbtri", name:"Trizeps über Kopf", reps:12, gear:"kht", how:"Eine Hantel mit beiden Händen hinter den Kopf senken, Ellenbogen zeigen nach oben. Arme strecken."},
+      {id:"dbtri", name:"Trizeps über Kopf", reps:8, gear:"kht", how:"Eine Hantel mit beiden Händen hinter den Kopf senken, Ellenbogen zeigen nach oben. Arme strecken."},
       {id:"concurl", name:"Konzentrations-Curls", reps:10, gear:"kh2", how:"Je Arm: sitzend, Ellenbogen innen am Oberschenkel abstützen. Ohne Schwung hochbeugen, langsam ablassen. Erst links, dann rechts."}]},
     {rounds:3, ex:[
       {id:"lateral", name:"Seitheben", reps:12, gear:"khl", how:"Arme leicht gebeugt seitlich bis Schulterhöhe heben, kurz halten, langsam ablassen. Kein Schwung."},
@@ -197,13 +197,19 @@ const PLAN = {
 };
 
 const KEY = "trainingsplan-v1";
-const KG0 = {lh:28, kh:10, kht:11.25, khl:5};
+const KG0 = {lh:30, kh:10, kht:12.5, khl:5};
 let S = {reps:{}, rest:60, sound:true, speak:true, log:[]};
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch(e) {}
 S.kg = Object.assign({}, KG0, S.kg);
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
-// Neuer Plan (Stand 20.11.2026): alte Anpassungen einmal verwerfen, damit die neuen Wiederholungen gelten
-if (S.plan !== 4){ S.reps = {}; S.plan = 4; save(); }
+// Plan-Version 5 (Stand 25.11.2026): Langhantel 30 kg, Trizeps 12,5 kg, diese beiden Übungen wieder ab 3 × 8.
+// Andere Wiederholungen aus Version 4 bleiben, ältere Stände werden verworfen.
+if (S.plan !== 5){
+  if (S.plan !== 4) S.reps = {};
+  S.kg.lh = KG0.lh; S.kg.kht = KG0.kht;
+  delete S.reps.bbrow; delete S.reps.dbtri;
+  S.plan = 5; save();
+}
 const reps = ex => (S.reps[ex.id] ?? ex.reps);
 
 /* Hanteln: lh = Langhantel, kh = Kurzhanteln schwer (kh1 = eine davon, kh2 = die zweite neben der Trizeps-Hantel), kht = eine Kurzhantel für Trizeps, khl = Kurzhanteln leicht */
