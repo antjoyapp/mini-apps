@@ -8,7 +8,7 @@ Adresse: https://antjoyapp.github.io/mini-apps/
 |---|---|
 | Training | `training/` |
 
-Neue App: Ordner anlegen, `index.html` hinein, Link in der Start-`index.html` ergänzen, committen und pushen. GitHub Pages veröffentlicht nach etwa einer Minute.
+Neue App: Ordner anlegen, `index.html` hinein, Link in der Start-`index.html` ergänzen, auf einem eigenen Branch committen und per Pull Request nach `main` mergen. `main` ist geschützt (Ruleset): kein direkter Push, kein Force-Push, nicht löschbar. GitHub Pages veröffentlicht nach dem Merge etwa eine Minute später.
 
 Hinweise:
 - Das Repo ist öffentlich (GitHub Pages im Gratis-Tarif). Keine privaten Daten oder Schlüssel ablegen.
